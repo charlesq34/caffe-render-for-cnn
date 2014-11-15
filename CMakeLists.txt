@@ -4,6 +4,7 @@ project( Caffe )
 ###    Build Options     ##########################################################################
 
 option(CPU_ONLY "Build Caffe without GPU support" OFF)
+option(USE_CUDNN "cuDNN acceleration switch" OFF)
 option(BUILD_PYTHON "Build Python wrapper" OFF)
 option(BUILD_MATLAB "Build Matlab wrapper" OFF)
 option(BUILD_EXAMPLES "Build examples" ON)
@@ -63,6 +64,17 @@ link_directories(${Boost_LIBRARY_DIRS})
 if(NOT CPU_ONLY)
     find_package(CUDA 5.5 REQUIRED)
     include_directories(${CUDA_INCLUDE_DIRS})
+    if(USE_CUDNN)
+        add_definitions(-DUSE_CUDNN)
+	    set(CUDNN_INCLUDE_DIR "" CACHE PATH "cuDNN include path")
+		if(NOT CUDNN_INCLUDE_DIR)
+            message(FATAL_ERROR "Undefined cuDNN include path")
+		endif()
+		set(CUDNN_LIBRARY "" CACHE FILEPATH "cuDNN library filename")
+        if(NOT CUDNN_LIBRARY)
+            message(FATAL_ERROR "Undefined cuDNN include path")
+		endif()
+    endif()
 
     set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
             -gencode arch=compute_20,code=sm_20
