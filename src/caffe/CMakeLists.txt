@@ -27,6 +27,7 @@ if(NOT CPU_ONLY)
     target_link_libraries(caffe caffe_cu
         ${CUDA_CUBLAS_LIBRARIES}
         ${CUDA_curand_LIBRARY}
+		${CUDNN_LIBRARY}
     )
 endif()
 
