@@ -56,8 +56,8 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
   Dtype* mean = NULL;
   if (has_mean_file) {
     CHECK_EQ(datum_channels, data_mean_.channels());
-    CHECK_EQ(datum_height, data_mean_.height());
-    CHECK_EQ(datum_width, data_mean_.width());
+    CHECK_LE(datum_height, data_mean_.height());
+    CHECK_LE(datum_width, data_mean_.width());
     mean = data_mean_.mutable_cpu_data();
   }
   if (has_mean_values) {
@@ -225,8 +225,8 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   Dtype* mean = NULL;
   if (has_mean_file) {
     CHECK_EQ(img_channels, data_mean_.channels());
-    CHECK_EQ(img_height, data_mean_.height());
-    CHECK_EQ(img_width, data_mean_.width());
+    CHECK_LE(img_height, data_mean_.height());
+    CHECK_LE(img_width, data_mean_.width());
     mean = data_mean_.mutable_cpu_data();
   }
   if (has_mean_values) {
@@ -340,8 +340,8 @@ void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
   Dtype* input_data = input_blob->mutable_cpu_data();
   if (has_mean_file) {
     CHECK_EQ(input_channels, data_mean_.channels());
-    CHECK_EQ(input_height, data_mean_.height());
-    CHECK_EQ(input_width, data_mean_.width());
+    CHECK_LE(input_height, data_mean_.height());
+    CHECK_LE(input_width, data_mean_.width());
     for (int n = 0; n < input_num; ++n) {
       int offset = input_blob->offset(n);
       caffe_sub(data_mean_.count(), input_data + offset,
