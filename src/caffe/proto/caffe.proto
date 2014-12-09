@@ -206,7 +206,7 @@ message NetStateRule {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 42 (last added: exp_param)
+// LayerParameter next available ID: 44 (last added: hadamard_product_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
@@ -227,7 +227,7 @@ message LayerParameter {
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 39 (last added: EXP)
+  // LayerType next available ID: 41 (last added: HADAMARD_PRODUCT)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
@@ -271,6 +271,9 @@ message LayerParameter {
     TANH = 23;
     WINDOW_DATA = 24;
     THRESHOLD = 31;
+
+    WELL_LOSS = 39;
+    HADAMARD_PRODUCT = 40;
   }
   optional LayerType type = 5; // the layer type from the enum above
 
@@ -328,6 +331,8 @@ message LayerParameter {
   optional ThresholdParameter threshold_param = 25;
   optional WindowDataParameter window_data_param = 20;
 
+  optional WellLossParameter well_loss_param = 42;
+  optional HadamardProductParameter hadamard_product_param = 43;
   // Parameters for data pre-processing.
   optional TransformationParameter transform_param = 36;
 
@@ -816,4 +821,15 @@ message V0LayerParameter {
   optional uint32 concat_dim = 65 [default = 1];
 
   optional HDF5OutputParameter hdf5_output_param = 1001;
+}
+
+
+// added by Hao
+message WellLossParameter { 
+  optional float slope = 1 [default = 1.0];
+}
+
+// Message that stores parameters used by HadamardProductLayer
+message HadamardProductParameter {
+  optional FillerParameter weight_filler = 1; // The filler for the weight
 }
