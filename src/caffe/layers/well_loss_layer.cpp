@@ -56,7 +56,7 @@ void WellLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 
     for (int i = 0; i < num; ++i) {
       for (int j = 0; j < dim; ++j) {
-	Dtype * val = & bottom_data[i * dim + j];
+	const Dtype * val = & bottom_data[i * dim + j];
 	if (*val >= 0 && *val <= 1) {
 	  bottom_diff[i * dim + j] = 0;
 	}

@@ -66,7 +66,7 @@ void HadamardProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     // Gradient with respect to weight
     const Dtype* top_diff = top[0]->cpu_diff();
     const Dtype* bottom_data = bottom[0]->cpu_data();
-    Dtype * weight_diff = this->blobs_[0]->mutable_cpu_diff()
+    Dtype * weight_diff = this->blobs_[0]->mutable_cpu_diff();
 
     int num = bottom[0]->num(); // M_
     int count = bottom[0]->count();
@@ -83,7 +83,7 @@ void HadamardProductLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     // Gradient with respect to bottom data
     const Dtype* top_diff = top[0]->cpu_diff();
     const Dtype* weight = this->blobs_[0]->cpu_data();
-    Dtype * bottom_diff = bottom[0]->mutable_cpu_diff;
+    Dtype * bottom_diff = bottom[0]->mutable_cpu_diff();
 
     int num = bottom[0]->num(); // M_
     int count = bottom[0]->count();
@@ -102,5 +102,5 @@ STUB_GPU(HadamardProductLayer);
 #endif
 
 INSTANTIATE_CLASS(HadamardProductLayer);
-REGISTER_LAYER_CLASS(INNER_PRODUCT, HadamardProductLayer);
+REGISTER_LAYER_CLASS(HADAMARD_PRODUCT, HadamardProductLayer);
 }  // namespace caffe
