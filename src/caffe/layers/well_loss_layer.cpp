@@ -12,6 +12,12 @@
 namespace caffe {
 
 template <typename Dtype>
+void WellLossLayer<Dtype>::Reshape(
+    const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+  top[0]->Reshape(1, 1, 1, 1);
+}
+
+template <typename Dtype>
 void WellLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_data = bottom[0]->cpu_data();

@@ -785,6 +785,8 @@ class WellLossLayer : public LossLayer<Dtype> {
 	virtual inline LayerParameter_LayerType type() const {
 	    return LayerParameter_LayerType_WELL_LOSS;
 	}
+        virtual void Reshape(const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top);
+        virtual inline int ExactNumBottomBlobs() const { return 1; }
 
     protected:
 	/// @copydoc WellLossLayer
