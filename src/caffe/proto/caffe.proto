@@ -206,7 +206,7 @@ message NetStateRule {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 44 (last added: hadamard_product_param)
+// LayerParameter next available ID: 45 (last added: subtraction_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
@@ -334,6 +334,7 @@ message LayerParameter {
 
   optional WellLossParameter well_loss_param = 42;
   optional HadamardProductParameter hadamard_product_param = 43;
+  optional SubtractionParameter subtraction_param = 44;
   // Parameters for data pre-processing.
   optional TransformationParameter transform_param = 36;
 
@@ -833,4 +834,8 @@ message WellLossParameter {
 // Message that stores parameters used by HadamardProductLayer
 message HadamardProductParameter {
   optional FillerParameter weight_filler = 1; // The filler for the weight
+}
+
+message SubtractionParameter {
+  required string mean_file = 1;
 }
