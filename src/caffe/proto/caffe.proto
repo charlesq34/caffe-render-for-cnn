@@ -206,7 +206,7 @@ message NetStateRule {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 45 (last added: subtraction_param)
+// LayerParameter next available ID: 46 (last added: l1_loss_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
@@ -227,7 +227,7 @@ message LayerParameter {
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 42 (last added: SUBTRACTION)
+  // LayerType next available ID: 43 (last added: L1_LOSS)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
@@ -275,6 +275,7 @@ message LayerParameter {
     WELL_LOSS = 39;
     HADAMARD_PRODUCT = 40;
     SUBTRACTION = 41;
+    L1_LOSS = 42;
   }
   optional LayerType type = 5; // the layer type from the enum above
 
@@ -335,6 +336,7 @@ message LayerParameter {
   optional WellLossParameter well_loss_param = 42;
   optional HadamardProductParameter hadamard_product_param = 43;
   optional SubtractionParameter subtraction_param = 44;
+  optional L1LossParameter l1_loss_param = 45;
   // Parameters for data pre-processing.
   optional TransformationParameter transform_param = 36;
 
@@ -838,4 +840,7 @@ message HadamardProductParameter {
 
 message SubtractionParameter {
   required string mean_file = 1;
+}
+
+message L1LossParameter {
 }

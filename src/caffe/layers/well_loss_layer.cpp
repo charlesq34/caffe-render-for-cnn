@@ -40,7 +40,7 @@ void WellLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
 	*val = -slope * (*val) * (*val) * (*val);
       }
       else if (*val >= 1) {
-	*val = slope * ((*val) * (*val) * (*val) - 1);
+	*val = slope * (*val - 1) * (*val - 1) * (*val - 1);
       }
     }
   }
@@ -70,7 +70,7 @@ void WellLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 	  bottom_diff[i * dim + j] *= (-3 * slope * (*val) * (*val));
 	}
 	else if (*val >= 1) {
-	  bottom_diff[i * dim + j] *= (3 * slope * (*val) * (*val));
+	  bottom_diff[i * dim + j] *= (3 * slope * (*val - 1) * (*val - 1));
 	}
       }
     }
