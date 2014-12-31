@@ -815,6 +815,141 @@ namespace caffe {
         virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
             const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
     };
+
+
+  /** added by Charles R. Qi
+   * @brief Computes the periodic regression loss
+   *
+   * @param bottom input Blob vector (length 2)
+   *   -# @f$ (N \times 1 \times 1 \times 1) @f$
+   *      regression predictions with values in 
+   *      @f$ [-\infty, +\infty] @f$ 
+   *   -# @f$ (N \times 1 \times 1 \times 1) @f$
+   *      indicating the correct output value
+   * @param top output Blob vector (length 1)
+   *   -# @f$ (1 \times 1 \times 1 \times 1) @f$
+   *      the computed periodic regression loss:
+   *      @f$ \frac{1}{N} \sum\limits_{n=1}^{N} 
+    *       \frac{1 - cos(\delta_{n}\frac{2\pi}{T})}{2} @f$
+   *
+   */
+  template <typename Dtype>
+    class PeriodicLossLayer : public LossLayer<Dtype> {
+      public:
+       explicit PeriodicLossLayer(const LayerParameter& param)
+           : LossLayer<Dtype>(param) {}
+     
+       virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+           const vector<Blob<Dtype>*>& top);
+       
+       virtual inline LayerParameter_LayerType type() const {
+         return LayerParameter_LayerType_PERIODIC_LOSS;
+       }
+     
+      protected:
+       virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+           const vector<Blob<Dtype>*>& top);
+     
+       virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+           const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+     
+       Blob<Dtype> diff_;
+    };
+  
+  /**
+   * @brief Computes the quantinized classification accuracy for a 
+   * 		regression problem.
+   */
+  template <typename Dtype>
+    class QuantAccuracyLayer : public Layer<Dtype> {
+      public:
+        explicit QuantAccuracyLayer(const LayerParameter& param)
+          : Layer<Dtype>(param) {}
+        virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+        virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+
+        virtual inline LayerParameter_LayerType type() const {
+          return LayerParameter_LayerType_QUANT_ACCURACY;
+        }
+
+        virtual inline int ExactNumBottomBlobs() const { return 2; }
+        virtual inline int ExactNumTopBlobs() const { return 1; }
+
+      protected:
+        virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+
+
+        /// @brief Not implemented -- QuantAccuracyLayer cannot be used as a loss.
+        virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+            const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+          for (int i = 0; i < propagate_down.size(); ++i) {
+            if (propagate_down[i]) { NOT_IMPLEMENTED; }
+          }
+        }
+    };
+  
+  /**
+   * @brief Split label to category and regression value.
+   */
+  template <typename Dtype>
+    class LabelSplitLayer : public Layer<Dtype> {
+      public:
+        explicit LabelSplitLayer(const LayerParameter& param)
+          : Layer<Dtype>(param) {}
+        virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+        virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+
+        virtual inline LayerParameter_LayerType type() const {
+          return LayerParameter_LayerType_LABEL_SPLIT;
+        }
+
+        virtual inline int ExactNumBottomBlobs() const { return 1; }
+        virtual inline int ExactNumTopBlobs() const { return 2; }
+
+      protected:
+        virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+
+
+        /// @brief Not implemented -- QuantAccuracyLayer cannot be used as a loss.
+        virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+            const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+          for (int i = 0; i < propagate_down.size(); ++i) {
+            if (propagate_down[i]) { NOT_IMPLEMENTED; }
+          }
+        }
+    };
+    
+  template <typename Dtype>
+    class CombineLossLayer : public Layer<Dtype> {
+      public:
+       explicit CombineLossLayer(const LayerParameter& param)
+           : Layer<Dtype>(param) {}
+       virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+           const vector<Blob<Dtype>*>& top);
+       virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+       
+       virtual inline LayerParameter_LayerType type() const {
+         return LayerParameter_LayerType_COMBINE_LOSS;
+       }
+     
+      protected:
+       virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+           const vector<Blob<Dtype>*>& top);
+     
+       virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+           const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+     
+       Blob<Dtype> diff_;
+    };
+
+
 }  // namespace caffe
 
 #endif  // CAFFE_LOSS_LAYERS_HPP_

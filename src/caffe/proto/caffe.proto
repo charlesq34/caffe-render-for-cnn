@@ -206,7 +206,7 @@ message NetStateRule {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 46 (last added: l1_loss_param)
+// LayerParameter next available ID: 51 (last added: combine_loss_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
@@ -227,7 +227,7 @@ message LayerParameter {
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 43 (last added: L1_LOSS)
+  // LayerType next available ID: 48 (last added: COMBINE_LOSS)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
@@ -276,6 +276,11 @@ message LayerParameter {
     HADAMARD_PRODUCT = 40;
     SUBTRACTION = 41;
     L1_LOSS = 42;
+    PERIODIC_LOSS = 43;
+    QUANT_ACCURACY = 44;
+    LABEL_SPLIT = 45;
+    MIXED_PRED = 46;
+    COMBINE_LOSS = 47;
   }
   optional LayerType type = 5; // the layer type from the enum above
 
@@ -337,6 +342,12 @@ message LayerParameter {
   optional HadamardProductParameter hadamard_product_param = 43;
   optional SubtractionParameter subtraction_param = 44;
   optional L1LossParameter l1_loss_param = 45;
+  optional PeriodicLossParameter periodic_loss_param = 46;
+  optional QuantAccuracyParameter quant_accuracy_param = 47;
+  optional LabelSplitParameter label_split_param = 48;
+  optional MixedPredParameter mixed_pred_param = 49;
+  optional CombineLossParameter combine_loss_param = 50;
+
   // Parameters for data pre-processing.
   optional TransformationParameter transform_param = 36;
 
@@ -829,8 +840,10 @@ message V0LayerParameter {
 
 
 // added by Hao
-message WellLossParameter { 
+message WellLossParameter {
   optional float slope = 1 [default = 1.0];
+  optional float low_bound = 2 [default = 0.0];
+  optional float high_bound = 3 [default = 16.0];
 }
 
 // Message that stores parameters used by HadamardProductLayer
@@ -843,4 +856,29 @@ message SubtractionParameter {
 }
 
 message L1LossParameter {
+}
+
+// Message that stores parameters used by PeriodicLossLayer
+message PeriodicLossParameter {
+  optional float period = 1 [default = 360.0];
+}
+
+message QuantAccuracyParameter {
+  optional float in_period = 1 [default = 360.0];
+  optional int32 out_num = 2 [default = 16];
+}
+
+message LabelSplitParameter {
+  optional float period = 1 [default = 360.0];
+  optional int32 split_num = 2 [default = 2];
+}
+
+message MixedPredParameter {
+  optional float period = 1 [default = 360.0];
+  optional int32 split_num = 2 [default = 2];
+}
+
+message CombineLossParameter {
+  optional float period = 1 [default = 360.0];
+  optional int32 split_num = 2 [default = 2];
 }

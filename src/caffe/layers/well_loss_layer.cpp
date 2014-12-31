@@ -28,19 +28,21 @@ void WellLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   int dim = count / num;
 
   float slope = this->layer_param_.well_loss_param().slope();
+  Dtype low = this->layer_param_.well_loss_param().low_bound();
+  Dtype high = this->layer_param_.well_loss_param().high_bound();
 
   caffe_copy(count, bottom_data, bottom_diff);
   for (int i = 0; i < num; ++i) {
     for (int j = 0; j < dim; ++j) {
       Dtype * val = & bottom_diff[i * dim + j];
-      if (*val >= 0 && *val <= 1) {
+      if (*val >= low && *val <= high) {
 	*val = 0;
       }
-      else if (*val <= 0) { 
-	*val = -slope * (*val) * (*val) * (*val);
+      else if (*val <= low) { 
+	*val = -slope * (*val - low) * (*val - low) * (*val -low);
       }
-      else if (*val >= 1) {
-	*val = slope * (*val - 1) * (*val - 1) * (*val - 1);
+      else if (*val >= high) {
+	*val = slope * (*val - high) * (*val - high) * (*val - high);
       }
     }
   }
@@ -59,18 +61,20 @@ void WellLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
     int dim = count / num;
 
     float slope = this->layer_param_.well_loss_param().slope();
+    Dtype low = this->layer_param_.well_loss_param().low_bound();
+    Dtype high = this->layer_param_.well_loss_param().high_bound();
 
     for (int i = 0; i < num; ++i) {
       for (int j = 0; j < dim; ++j) {
 	const Dtype * val = & bottom_data[i * dim + j];
-	if (*val >= 0 && *val <= 1) {
+	if (*val >= low && *val <= high) {
 	  bottom_diff[i * dim + j] = 0;
 	}
-	else if (*val <= 0) { 
-	  bottom_diff[i * dim + j] *= (-3 * slope * (*val) * (*val));
+	else if (*val <= low) { 
+	  bottom_diff[i * dim + j] *= (-3 * slope * (*val - low) * (*val - low));
 	}
-	else if (*val >= 1) {
-	  bottom_diff[i * dim + j] *= (3 * slope * (*val - 1) * (*val - 1));
+	else if (*val >= high) {
+	  bottom_diff[i * dim + j] *= (3 * slope * (*val - high) * (*val - high));
 	}
       }
     }
