@@ -38,11 +38,13 @@ void LabelSplitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   int num = bottom[0]->num();
   Dtype period = this->layer_param_.label_split_param().period();
   Dtype split_num = this->layer_param_.label_split_param().split_num();
+  Dtype label_max = this->layer_param_.label_split_param().label_max();
   float unit_len = period / float(split_num);
 
   for (int i = 0; i < num; ++i) {
-    top[0]->mutable_cpu_data()[i] = floor(bottom_label[i] / unit_len);
-    top[1]->mutable_cpu_data()[i] = fmod(bottom_label[i], unit_len);
+    float label = bottom_label[i]/(label_max/period); // hardcoded, default label range: 0~360
+    top[0]->mutable_cpu_data()[i] = floor(label / unit_len);
+    top[1]->mutable_cpu_data()[i] = fmod(label, unit_len);
     //LOG(INFO) << "Label: " << bottom_label[i] << " Category: " << floor(bottom_label[i]/unit_len);
   }
 }

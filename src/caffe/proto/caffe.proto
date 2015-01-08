@@ -861,16 +861,19 @@ message L1LossParameter {
 // Message that stores parameters used by PeriodicLossLayer
 message PeriodicLossParameter {
   optional float period = 1 [default = 360.0];
+  optional float label_max = 2 [default = 360.0];
 }
 
 message QuantAccuracyParameter {
   optional float in_period = 1 [default = 360.0];
   optional int32 out_num = 2 [default = 16];
+  optional float label_max = 3 [default = 360.0];
 }
 
 message LabelSplitParameter {
   optional float period = 1 [default = 360.0];
   optional int32 split_num = 2 [default = 2];
+  optional float label_max = 3 [default = 360.0];
 }
 
 message MixedPredParameter {
@@ -881,4 +884,9 @@ message MixedPredParameter {
 message CombineLossParameter {
   optional float period = 1 [default = 360.0];
   optional int32 split_num = 2 [default = 2];
+  enum Norm {
+    L1 = 1;
+    L2 = 2;
+  }
+  optional Norm norm = 3 [default = L2];
 }

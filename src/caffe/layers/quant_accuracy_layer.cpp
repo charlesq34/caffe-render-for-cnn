@@ -43,17 +43,18 @@ void QuantAccuracyLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   // e.g. 0~360 quantinize to 16 categories {0,1,...,15}, 0~11.25 and 348.75~360 -> 0
   Dtype in_period = this->layer_param_.quant_accuracy_param().in_period();
   Dtype out_num = this->layer_param_.quant_accuracy_param().out_num();
+  Dtype label_max = this->layer_param_.quant_accuracy_param().label_max();
   float width = in_period/float(out_num);
   
   for (int i = 0; i < num; ++i) {
     // pred and label are float and of [0, in_period]
     float pred = fmod(bottom_data[i] + width / 2.0, in_period);
     if (pred < 0) { pred += in_period; }
-    float label = fmod(bottom_label[i] + width / 2.0, in_period);
+    float label = fmod(bottom_label[i]/float(label_max/in_period) + width / 2.0, in_period); //HACK
     if (label < 0) { label += in_period; }
-    // LOG(INFO) << "Final Pred: " << bottom_data[i] << ", " << pred << " Label: " << bottom_label[i] << "," << label;
     int pred_cat = floor(pred  / width);
     int label_cat = floor(label / width);
+    LOG(INFO) << "Final Pred: " << bottom_data[i] << ", " << pred_cat << " Label: " << bottom_label[i]/float(label_max/in_period) << "," << label_cat;
 
     if (pred_cat == label_cat) {
       ++accuracy;

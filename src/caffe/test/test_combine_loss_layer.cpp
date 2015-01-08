@@ -34,7 +34,7 @@ class CombineLossLayerTest : public MultiDeviceTest<TypeParam> {
     
     FillerParameter filler_param;
     filler_param.set_min(0.0);
-    filler_param.set_max(360.0);
+    filler_param.set_max(180.0);
     UniformFiller<Dtype> label_filler(filler_param);
     label_filler.Fill(this->blob_bottom_label_);
     blob_bottom_vec_.push_back(blob_bottom_label_);
@@ -67,9 +67,12 @@ class CombineLossLayerTest : public MultiDeviceTest<TypeParam> {
 
 TYPED_TEST_CASE(CombineLossLayerTest, TestDtypesAndDevices);
 
-TYPED_TEST(CombineLossLayerTest, TestGradient) {
+TYPED_TEST(CombineLossLayerTest, TestGradientL1) {
   typedef typename TypeParam::Dtype Dtype;
   LayerParameter layer_param;
+  // Set norm to L2
+  CombineLossParameter* combine_loss_param = layer_param.mutable_combine_loss_param();
+  combine_loss_param->set_norm(CombineLossParameter_Norm_L1);
   CombineLossLayer<Dtype> layer(layer_param);
   layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
   GradientChecker<Dtype> checker(1e-2, 1e-2, 1701);
@@ -79,4 +82,18 @@ TYPED_TEST(CombineLossLayerTest, TestGradient) {
       this->blob_top_vec_, 3);
 }
 
+TYPED_TEST(CombineLossLayerTest, TestGradientL2) {
+  typedef typename TypeParam::Dtype Dtype;
+  LayerParameter layer_param;
+  // Set norm to L2
+  CombineLossParameter* combine_loss_param = layer_param.mutable_combine_loss_param();
+  combine_loss_param->set_norm(CombineLossParameter_Norm_L2);
+  CombineLossLayer<Dtype> layer(layer_param);
+  layer.SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  GradientChecker<Dtype> checker(1e-2, 1e-2, 1701);
+  checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+      this->blob_top_vec_, 2);
+  checker.CheckGradientExhaustive(&layer, this->blob_bottom_vec_,
+      this->blob_top_vec_, 3);
+}
 }  // namespace caffe

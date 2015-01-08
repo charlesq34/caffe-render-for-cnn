@@ -24,19 +24,30 @@ void PeriodicLossLayer<Dtype>::LayerSetUp(
 
   // x1 - x2
   diff_.Reshape(bottom[0]->num(), 1, 1, 1);
+  
+  if (this->layer_param_.loss_weight_size() == 0) {
+    this->layer_param_.add_loss_weight(Dtype(1));
+  }
+
 }
 
 template <typename Dtype>
 void PeriodicLossLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   int count = bottom[0]->count();
+  /*
   caffe_sub(
       count,
       bottom[0]->cpu_data(),
       bottom[1]->cpu_data(),
       diff_.mutable_cpu_data());
+  */
   Dtype loss(0.0);
   Dtype period = this->layer_param_.periodic_loss_param().period();
+  Dtype label_max = this->layer_param_.periodic_loss_param().label_max();
+  for (int i=0; i<count; ++i) {
+    diff_.mutable_cpu_data()[i] = bottom[0]->cpu_data()[i] - bottom[1]->cpu_data()[i]/float(label_max/period); // HACK 
+  }
   for (int i = 0; i < bottom[0]->num(); ++i) {
     loss +=  (1 - cos(diff_.cpu_data()[i] / period * 2 * PI)) / Dtype(2);
   }

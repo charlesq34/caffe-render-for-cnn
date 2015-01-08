@@ -14,6 +14,9 @@ namespace caffe {
 template <typename Dtype>
 void WellLossLayer<Dtype>::Reshape(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
+  if (this->layer_param_.loss_weight_size() == 0) {
+    this->layer_param_.add_loss_weight(Dtype(1));
+  } 
   top[0]->Reshape(1, 1, 1, 1);
 }
 
