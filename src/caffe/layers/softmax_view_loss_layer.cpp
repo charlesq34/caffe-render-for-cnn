@@ -2,7 +2,7 @@
 #include <cfloat>
 #include <vector>
 #include <cmath>
-
+#include <iostream>
 #include "caffe/layer.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/vision_layers.hpp"
@@ -48,7 +48,8 @@ void SoftmaxWithViewLossLayer<Dtype>::Forward_cpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
   // The forward pass computes the softmax prob values.
   softmax_layer_->Forward(softmax_bottom_vec_, softmax_top_vec_);
-  const Dtype* prob_data = prob_.cpu_data();
+  //const Dtype* prob_data = prob_.cpu_data();
+  Dtype* prob_data = prob_.mutable_cpu_data();
   const Dtype* label = bottom[1]->cpu_data();
   int num = prob_.num();
   int dim = prob_.count() / num;
@@ -67,21 +68,27 @@ void SoftmaxWithViewLossLayer<Dtype>::Forward_cpu(
   for (int i = 0; i < num; ++i) {
     for (int j = 0; j < spatial_dim; j++) {
       int label_value = static_cast<int>(label[i * spatial_dim + j]);
-
       // convert label_value to positive, mark loss weight
-      if (label_value >= 0) {
+      if (label_value < 10000) {
         weight = pos_weight; 
       } else {
         weight = neg_weight;
-        label_value = abs(label_value+1);
+        label_value = label_value - 10000;
       }
 
+      //std::cout << dim << " " << label_value << " " << spatial_dim << "\n";
       CHECK_GT(dim, label_value * spatial_dim);
-
+      
       // Added by rqi, full of HARD CODING..
       // ASSUMPTION: classes number is 12*360 or 12*360 + 1
       int cls_idx = label_value / 360; // 0~11,12->bkg
       if (cls_idx == 12) { continue; } // no loss for bkg
+
+      // normalize prob_data of sample i to probs (360 numbers) 
+      // inside the category corresponding to label_value
+      Dtype probs_cls_sum = caffe_cpu_asum(360, &(prob_data[i*dim + cls_idx*360]));
+      caffe_scal(360, Dtype(1.0/probs_cls_sum), &(prob_data[i*dim + cls_idx*360]));
+
       // convert to 360-class label
       int view_label = label_value % 360;
       Dtype tmp_loss = 0;
@@ -125,10 +132,9 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
 
     Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
     const Dtype* prob_data = prob_.cpu_data();
-    caffe_copy(prob_.count(), prob_data, bottom_diff);
-
-    // by rqi, scale by sum of weights
-    caffe_scal(prob_.count(), weights_sum_, bottom_diff);
+    // set bottom_diff to 0 at first
+    caffe_set(prob_.count(), Dtype(0.0), bottom_diff);
+    //caffe_copy(prob_.count(), prob_data, bottom_diff);
 
     Dtype weight = 0;
     const Dtype* label = bottom[1]->cpu_data();
@@ -140,11 +146,11 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
          int label_value = static_cast<int>(label[i * spatial_dim + j]);
 
          // convert label_value to positive, mark loss weight
-         if (label_value >= 0) {
+         if (label_value < 10000) {
            weight = pos_weight; 
          } else {
            weight = neg_weight;
-           label_value = abs(label_value+1);
+           label_value = label_value - 10000;
          }
 
          // Added by rqi, full of HARD CODING..
@@ -152,9 +158,14 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
          int cls_idx = label_value / 360; // 0~11,12->bkg
 
          if (cls_idx == 12) { // no gradient for bkg
-           caffe_set(dim, Dtype(0.0), &(bottom_diff[i*dim]));
+           //caffe_set(dim, Dtype(0.0), &(bottom_diff[i*dim]));
            continue; 
          }
+      
+         // copy newly normalized probs of cls_idx to bottom_diff
+         caffe_copy(360, &(prob_data[i*dim + cls_idx*360]), &(bottom_diff[i*dim + cls_idx*360]));
+         // by rqi, scale by sum of weights
+         caffe_scal(360, weights_sum_, &(bottom_diff[i*dim + cls_idx*360]));
          
          // scale prob_data part in bottom_diff
          caffe_scal(dim, weight, &(bottom_diff[i*dim]));
