@@ -967,7 +967,7 @@ namespace caffe {
             const vector<Blob<Dtype>*>& top);
 
         virtual inline LayerParameter_LayerType type() const {
-          return LayerParameter_LayerType_SOFTMAX_VIEW_LOSS;
+          return LayerParameter_LayerType_SOFTMAX_WITH_VIEW_LOSS;
         }
         virtual inline int ExactNumBottomBlobs() const { return -1; }
         virtual inline int MinBottomBlobs() const { return 2; }
@@ -979,12 +979,8 @@ namespace caffe {
       protected:
         virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
             const vector<Blob<Dtype>*>& top);
-        virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-            const vector<Blob<Dtype>*>& top);
 
         virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-            const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-        virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
             const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
 
         /// The internal SoftmaxLayer used to map predictions to a distribution.
@@ -996,7 +992,7 @@ namespace caffe {
         /// top vector holder used in call to the underlying SoftmaxLayer::Forward
         vector<Blob<Dtype>*> softmax_top_vec_;
         // sum of weights
-        Dtype weigths_sum_;
+        Dtype weights_sum_;
     };
 
 }  // namespace caffe

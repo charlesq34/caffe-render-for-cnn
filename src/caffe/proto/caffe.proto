@@ -894,6 +894,6 @@ message CombineLossParameter {
 }
 
 message SoftmaxWithViewLossParameter {
-  optional int bandwidth = 1 [default = 0];
+  optional int32 bandwidth = 1 [default = 0];
   optional float sigma = 2 [default = 1];
 }

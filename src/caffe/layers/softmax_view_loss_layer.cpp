@@ -27,7 +27,7 @@ void SoftmaxWithViewLossLayer<Dtype>::LayerSetUp(
   Dtype sigma = this->layer_param_.softmax_with_view_loss_param().sigma();
   CHECK_GT(sigma, 0);
   for (int k = -1*bandwidth; k<=bandwidth; k++) {
-    weigths_sum_ += exp(-abs(k)/float(sigma));
+    weights_sum_ += exp(-abs(k)/float(sigma));
   }
 }
 
@@ -75,9 +75,9 @@ void SoftmaxWithViewLossLayer<Dtype>::Forward_cpu(
       for (int k = -1*bandwidth; k<=bandwidth; k++) {
           // get positive modulo
           // e.g. view_label+k=-3 --> 357
-          view_k = ((view_label + k) % 360 + 360) % 360;
+          int view_k = ((view_label + k) % 360 + 360) % 360;
           // convert back to 4320-class label
-          label_value_k = view_k + cls_idx * 360;
+          int label_value_k = view_k + cls_idx * 360;
           // loss is weighted by exp(-|dist|/sigma)
           tmp_loss -= exp(-abs(k)/float(sigma)) * log(std::max(prob_data[i * dim +
           label_value_k * spatial_dim + j],Dtype(FLT_MIN)));
@@ -103,6 +103,9 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
                << " Layer cannot backpropagate to label inputs.";
   }
   if (propagate_down[0]) {
+    Dtype bandwidth = this->layer_param_.softmax_with_view_loss_param().bandwidth();
+    Dtype sigma = this->layer_param_.softmax_with_view_loss_param().sigma();
+
     Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
     const Dtype* prob_data = prob_.cpu_data();
     caffe_copy(prob_.count(), prob_data, bottom_diff);
@@ -122,7 +125,7 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
          int cls_idx = label_value / 360; // 0~11,12->bkg
 
          if (cls_idx == 12) { // no gradient for bkg
-           caffe_set(dim, 0, &(bottom_diff[i*dim]));
+           caffe_set(dim, Dtype(0.0), &(bottom_diff[i*dim]));
            continue; 
          }
          
@@ -131,9 +134,9 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
          for (int k = -1*bandwidth; k<=bandwidth; k++) {
              // get positive modulo
              // e.g. view_label+k=-3 --> 357
-             view_k = ((view_label + k) % 360 + 360) % 360;
+             int view_k = ((view_label + k) % 360 + 360) % 360;
              // convert back to 4320-class label
-             label_value_k = view_k + cls_idx * 360;
+             int label_value_k = view_k + cls_idx * 360;
              // loss is weighted by exp(-|dist|/sigma)
              bottom_diff[i * dim + label_value_k * spatial_dim + j] -= exp(-abs(k)/float(sigma));
          }
