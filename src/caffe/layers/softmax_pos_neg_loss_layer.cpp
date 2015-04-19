@@ -53,11 +53,11 @@ void SoftmaxPosNegWithLossLayer<Dtype>::Forward_cpu(
       int label_value = static_cast<int>(label[i * spatial_dim + j]);
       
       // convert label_value to positive, mark loss weight
-      if (label_value >= 0) {
+      if (label_value < 10000) {
         weight = pos_weight; 
       } else {
         weight = neg_weight;
-        label_value = abs(label_value+1);
+        label_value = label_value - 10000;
       }
       
       CHECK_GT(dim, label_value * spatial_dim);
@@ -100,11 +100,11 @@ void SoftmaxPosNegWithLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>&
         int label_value = static_cast<int>(label[i * spatial_dim + j]);
       
         // convert label_value to positive, mark loss weight
-        if (label_value >= 0) {
+        if (label_value < 10000) {
           weight = pos_weight; 
         } else {
           weight = neg_weight;
-          label_value = abs(label_value+1);
+          label_value = label_value - 10000;
         }
 
         // scale prob_data part in bottom_diff

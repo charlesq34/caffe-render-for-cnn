@@ -206,7 +206,7 @@ message NetStateRule {
 // NOTE
 // Update the next available ID when you add a new LayerParameter field.
 //
-// LayerParameter next available ID: 53 (last added: softmax_pos_neg_loss_param)
+// LayerParameter next available ID: 54 (last added: accuracy_view_param)
 message LayerParameter {
   repeated string bottom = 2; // the name of the bottom blobs
   repeated string top = 3; // the name of the top blobs
@@ -227,7 +227,7 @@ message LayerParameter {
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 50 (last added: SOFTMAX_POS_NEG_LOSS)
+  // LayerType next available ID: 52 (last added: DET_VIEW_SPLIT)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
@@ -283,6 +283,8 @@ message LayerParameter {
     COMBINE_LOSS = 47;
     SOFTMAX_WITH_VIEW_LOSS = 48;
     SOFTMAX_POS_NEG_LOSS = 49;
+    ACCURACY_VIEW = 50;
+    DET_VIEW_SPLIT = 51;
   }
   optional LayerType type = 5; // the layer type from the enum above
 
@@ -351,6 +353,7 @@ message LayerParameter {
   optional CombineLossParameter combine_loss_param = 50;
   optional SoftmaxWithViewLossParameter softmax_with_view_loss_param = 51;
   optional SoftmaxPosNegWithLossParameter softmax_pos_neg_loss_param = 52;
+  optional AccuracyViewParameter accuracy_view_param = 53;
 
   // Parameters for data pre-processing.
   optional TransformationParameter transform_param = 36;
@@ -905,4 +908,8 @@ message SoftmaxWithViewLossParameter {
 message SoftmaxPosNegWithLossParameter {
   optional float pos_weight = 1 [default = 1];
   optional float neg_weight = 2 [default = 0];
+}
+
+message AccuracyViewParameter {
+  optional float tol_angle = 1 [default = 15];
 }
