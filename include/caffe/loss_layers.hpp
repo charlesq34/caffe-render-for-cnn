@@ -994,6 +994,50 @@ namespace caffe {
         // sum of weights
         Dtype weights_sum_;
     };
+  
+  /**
+   * Author: Charles R. Qi
+   * @brief: softmax loss layer with one extension: support pos and neg loss weight.
+   *
+   */
+  template <typename Dtype>
+    class SoftmaxPosNegWithLossLayer : public LossLayer<Dtype> {
+      public:
+        explicit SoftmaxPosNegWithLossLayer(const LayerParameter& param)
+          : LossLayer<Dtype>(param),
+          softmax_layer_(new SoftmaxLayer<Dtype>(param)) {}
+        virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+        virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+
+        virtual inline LayerParameter_LayerType type() const {
+          return LayerParameter_LayerType_SOFTMAX_POS_NEG_LOSS;
+        }
+        virtual inline int ExactNumBottomBlobs() const { return -1; }
+        virtual inline int MinBottomBlobs() const { return 2; }
+        virtual inline int MaxBottomBlobs() const { return 3; }
+        virtual inline int ExactNumTopBlobs() const { return -1; }
+        virtual inline int MinTopBlobs() const { return 1; }
+        virtual inline int MaxTopBlobs() const { return 2; }
+
+      protected:
+        /// @copydoc SoftmaxPosNegWithLossLayer
+        virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+
+        virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+            const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+        /// The internal SoftmaxLayer used to map predictions to a distribution.
+        shared_ptr<SoftmaxLayer<Dtype> > softmax_layer_;
+        /// prob stores the output probability predictions from the SoftmaxLayer.
+        Blob<Dtype> prob_;
+        /// bottom vector holder used in call to the underlying SoftmaxLayer::Forward
+        vector<Blob<Dtype>*> softmax_bottom_vec_;
+        /// top vector holder used in call to the underlying SoftmaxLayer::Forward
+        vector<Blob<Dtype>*> softmax_top_vec_;
+    };
 
 }  // namespace caffe
 

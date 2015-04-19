@@ -58,11 +58,24 @@ void SoftmaxWithViewLossLayer<Dtype>::Forward_cpu(
   CHECK_EQ(spatial_dim, 1);
   Dtype bandwidth = this->layer_param_.softmax_with_view_loss_param().bandwidth();
   Dtype sigma = this->layer_param_.softmax_with_view_loss_param().sigma();
-
+  // load loss weight, pos->render, neg->real
+  Dtype pos_weight = this->layer_param_.softmax_with_view_loss_param().pos_weight();
+  Dtype neg_weight = this->layer_param_.softmax_with_view_loss_param().neg_weight();
+  
+  Dtype weight = 0;
   Dtype loss = 0;
   for (int i = 0; i < num; ++i) {
     for (int j = 0; j < spatial_dim; j++) {
-      const int label_value = static_cast<int>(label[i * spatial_dim + j]);
+      int label_value = static_cast<int>(label[i * spatial_dim + j]);
+
+      // convert label_value to positive, mark loss weight
+      if (label_value >= 0) {
+        weight = pos_weight; 
+      } else {
+        weight = neg_weight;
+        label_value = abs(label_value+1);
+      }
+
       CHECK_GT(dim, label_value * spatial_dim);
 
       // Added by rqi, full of HARD CODING..
@@ -82,8 +95,9 @@ void SoftmaxWithViewLossLayer<Dtype>::Forward_cpu(
           tmp_loss -= exp(-abs(k)/float(sigma)) * log(std::max(prob_data[i * dim +
           label_value_k * spatial_dim + j],Dtype(FLT_MIN)));
       }
-      loss += tmp_loss;
-
+      // scale loss with loss weight
+      loss += tmp_loss * weight;
+      
       //loss -= log(std::max(prob_data[i * dim +
       //    label_value * spatial_dim + j],Dtype(FLT_MIN)));
     }
@@ -105,6 +119,9 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
   if (propagate_down[0]) {
     Dtype bandwidth = this->layer_param_.softmax_with_view_loss_param().bandwidth();
     Dtype sigma = this->layer_param_.softmax_with_view_loss_param().sigma();
+    // load loss weight, pos->render, neg->real
+    Dtype pos_weight = this->layer_param_.softmax_with_view_loss_param().pos_weight();
+    Dtype neg_weight = this->layer_param_.softmax_with_view_loss_param().neg_weight();
 
     Dtype* bottom_diff = bottom[0]->mutable_cpu_diff();
     const Dtype* prob_data = prob_.cpu_data();
@@ -113,15 +130,25 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
     // by rqi, scale by sum of weights
     caffe_scal(prob_.count(), weights_sum_, bottom_diff);
 
+    Dtype weight = 0;
     const Dtype* label = bottom[1]->cpu_data();
     int num = prob_.num();
     int dim = prob_.count() / num;
     int spatial_dim = prob_.height() * prob_.width();
     for (int i = 0; i < num; ++i) {
       for (int j = 0; j < spatial_dim; ++j) {
+         int label_value = static_cast<int>(label[i * spatial_dim + j]);
+
+         // convert label_value to positive, mark loss weight
+         if (label_value >= 0) {
+           weight = pos_weight; 
+         } else {
+           weight = neg_weight;
+           label_value = abs(label_value+1);
+         }
+
          // Added by rqi, full of HARD CODING..
          // ASSUMPTION: classes number is 12*360 or 12*360 + 1
-         const int label_value = static_cast<int>(label[i * spatial_dim + j]);
          int cls_idx = label_value / 360; // 0~11,12->bkg
 
          if (cls_idx == 12) { // no gradient for bkg
@@ -129,6 +156,9 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
            continue; 
          }
          
+         // scale prob_data part in bottom_diff
+         caffe_scal(dim, weight, &(bottom_diff[i*dim]));
+ 
          // convert to 360-class label
          int view_label = label_value % 360;
          for (int k = -1*bandwidth; k<=bandwidth; k++) {
@@ -138,7 +168,8 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
              // convert back to 4320-class label
              int label_value_k = view_k + cls_idx * 360;
              // loss is weighted by exp(-|dist|/sigma)
-             bottom_diff[i * dim + label_value_k * spatial_dim + j] -= exp(-abs(k)/float(sigma));
+             // note: scale diff with loss weight
+             bottom_diff[i * dim + label_value_k * spatial_dim + j] -= exp(-abs(k)/float(sigma)) * weight;
          }
 
          //bottom_diff[i * dim + static_cast<int>(label[i * spatial_dim + j])
