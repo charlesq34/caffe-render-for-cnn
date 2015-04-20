@@ -44,8 +44,14 @@ void AccuracyViewLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
   //vector<Dtype> maxval(top_k_+1);
   //vector<int> max_id(top_k_+1);
   for (int i = 0; i < num; ++i) {
-    int label_angle = int(bottom_label[i]) % 360;
-    int cls_idx = int(bottom_label[i]) / 360;
+    // convert label value to 0~4319
+    int label_value = int(bottom_label[i]);
+    if (label_value >= 10000) {
+      label_value -= 10000;
+    }
+
+    int label_angle = label_value % 360;
+    int cls_idx = label_value / 360;
     if (cls_idx == 12) { continue; } // if it's bkg
     nonbkg_cnt++;
     
