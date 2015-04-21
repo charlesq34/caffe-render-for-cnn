@@ -36,7 +36,7 @@ void DetViewSplitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
   const Dtype* bottom_label = bottom[0]->cpu_data();
   int num = bottom[0]->num();
-
+  /*
   // HARD CODED: label input: 0~4320, where 0~4319 for object, 4320 for bkg
   // or label input: 10000~14320, where 10000~14319 for object, 14320 for bkg
   // top[0] is for detection, top[1] is for view
@@ -52,6 +52,36 @@ void DetViewSplitLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     }
     top[0]->mutable_cpu_data()[i] = det_label;
     //LOG(INFO) << "Label: " << bottom_label[i] << " Category: " << floor(bottom_label[i]/unit_len);
+  }
+  */
+
+  // HARD CODED: 
+  // input: 
+  //   label input: 0 for bkg, 1~4320 (correspond to original 0~4319)
+  //   or label input (real image obj): 10000~14319
+  // output: 
+  //   1. det: {1,2,4,...,20} + 0 OR {10001, ...,10020} + 10000
+  //   2. view: 0~4319 + 4320 OR 10000~14319 + 14320
+  // top[0] is for detection, top[1] is for view
+  for (int i = 0; i < num; ++i) {
+    Dtype label = bottom_label[i];
+    if (label == 0) { // bkg
+      top[1]->mutable_cpu_data()[i] = 14320;
+    } else if (label < 10000) { // render obj 1~4320 -> 0~4319 
+      top[1]->mutable_cpu_data()[i] = label - 1;
+    } else { // real obj 10000~14319
+      top[1]->mutable_cpu_data()[i] = label;
+    }
+    
+    Dtype det_label = 0;
+    if (label == 0) {
+      det_label = 0;
+    } else if (label < 10000) {
+      det_label = cls_idx_map[int(label - 1) / 360];
+    } else {
+      det_label = cls_idx_map[int(label - 10000) / 360] + 10000;
+    }
+    top[0]->mutable_cpu_data()[i] = det_label;
   }
 }
 
