@@ -227,7 +227,7 @@ message LayerParameter {
   // line above the enum. Update the next available ID when you add a new
   // LayerType.
   //
-  // LayerType next available ID: 52 (last added: DET_VIEW_SPLIT)
+  // LayerType next available ID: 53 (last added: TRIPLE_VIEW_SPLIT)
   enum LayerType {
     // "NONE" layer type is 0th enum element so that we don't cause confusion
     // by defaulting to an existent LayerType (instead, should usually error if
@@ -285,6 +285,7 @@ message LayerParameter {
     SOFTMAX_POS_NEG_LOSS = 49;
     ACCURACY_VIEW = 50;
     DET_VIEW_SPLIT = 51;
+    TRIPLE_VIEW_SPLIT = 52;
   }
   optional LayerType type = 5; // the layer type from the enum above
 

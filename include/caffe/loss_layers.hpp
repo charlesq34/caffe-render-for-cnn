@@ -1112,7 +1112,41 @@ namespace caffe {
           }
         }
     };
+   
+  /**
+   * author: charles r. qi
+   * split label to classidx, azimuth, elevation, tilt
+   */
+  template <typename Dtype>
+    class TripleViewSplitLayer : public Layer<Dtype> {
+      public:
+        explicit TripleViewSplitLayer(const LayerParameter& param)
+          : Layer<Dtype>(param) {}
+        virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+        virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
 
+        virtual inline LayerParameter_LayerType type() const {
+          return LayerParameter_LayerType_TRIPLE_VIEW_SPLIT;
+        }
+
+        virtual inline int ExactNumBottomBlobs() const { return 1; }
+        virtual inline int ExactNumTopBlobs() const { return 2; }
+
+      protected:
+        virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+            const vector<Blob<Dtype>*>& top);
+
+
+        /// @brief Not implemented -- QuantAccuracyLayer cannot be used as a loss.
+        virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+            const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
+          for (int i = 0; i < propagate_down.size(); ++i) {
+            if (propagate_down[i]) { NOT_IMPLEMENTED; }
+          }
+        }
+    };
 }  // namespace caffe
 
 #endif  // CAFFE_LOSS_LAYERS_HPP_
