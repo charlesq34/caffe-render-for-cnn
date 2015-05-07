@@ -904,6 +904,7 @@ message SoftmaxWithViewLossParameter {
   optional float sigma = 2 [default = 1];
   optional float pos_weight = 3 [default = 1];
   optional float neg_weight = 4 [default = 0];
+  optional int32 period = 5 [default = 360];
 }
 
 message SoftmaxPosNegWithLossParameter {
@@ -913,4 +914,5 @@ message SoftmaxPosNegWithLossParameter {
 
 message AccuracyViewParameter {
   optional float tol_angle = 1 [default = 15];
+  optional int32 period = 2 [default = 360];
 }

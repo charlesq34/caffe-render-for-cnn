@@ -22,7 +22,8 @@ void SoftmaxWithViewLossLayer<Dtype>::LayerSetUp(
   // by rqi
   weights_sum_ = 0.0;
   Dtype bandwidth = this->layer_param_.softmax_with_view_loss_param().bandwidth();
-  CHECK_GT(180, bandwidth);
+  Dtype period = this->layer_param_.softmax_with_view_loss_param().period();
+  CHECK_GT(period/2, bandwidth);
   CHECK_GE(bandwidth, 0);
   Dtype sigma = this->layer_param_.softmax_with_view_loss_param().sigma();
   CHECK_GT(sigma, 0);
@@ -59,6 +60,7 @@ void SoftmaxWithViewLossLayer<Dtype>::Forward_cpu(
   CHECK_EQ(spatial_dim, 1);
   Dtype bandwidth = this->layer_param_.softmax_with_view_loss_param().bandwidth();
   Dtype sigma = this->layer_param_.softmax_with_view_loss_param().sigma();
+  Dtype period = this->layer_param_.softmax_with_view_loss_param().period();
   // load loss weight, pos->render, neg->real
   Dtype pos_weight = this->layer_param_.softmax_with_view_loss_param().pos_weight();
   Dtype neg_weight = this->layer_param_.softmax_with_view_loss_param().neg_weight();
@@ -81,23 +83,23 @@ void SoftmaxWithViewLossLayer<Dtype>::Forward_cpu(
       
       // Added by rqi, full of HARD CODING..
       // ASSUMPTION: classes number is 12*360 or 12*360 + 1
-      int cls_idx = label_value / 360; // 0~11,12->bkg
+      int cls_idx = label_value / int(period); // 0~11,12->bkg
       if (cls_idx == 12) { continue; } // no loss for bkg
 
       // normalize prob_data of sample i to probs (360 numbers) 
       // inside the category corresponding to label_value
-      Dtype probs_cls_sum = caffe_cpu_asum(360, &(prob_data[i*dim + cls_idx*360]));
-      caffe_scal(360, Dtype(1.0/probs_cls_sum), &(prob_data[i*dim + cls_idx*360]));
+      Dtype probs_cls_sum = caffe_cpu_asum(int(period), &(prob_data[i*dim + cls_idx*int(period)]));
+      caffe_scal(int(period), Dtype(1.0/probs_cls_sum), &(prob_data[i*dim + cls_idx*int(period)]));
 
       // convert to 360-class label
-      int view_label = label_value % 360;
+      int view_label = label_value % int(period);
       Dtype tmp_loss = 0;
       for (int k = -1*bandwidth; k<=bandwidth; k++) {
           // get positive modulo
           // e.g. view_label+k=-3 --> 357
-          int view_k = ((view_label + k) % 360 + 360) % 360;
+          int view_k = ((view_label + k) % int(period) + int(period)) % int(period);
           // convert back to 4320-class label
-          int label_value_k = view_k + cls_idx * 360;
+          int label_value_k = view_k + cls_idx * int(period);
           // loss is weighted by exp(-|dist|/sigma)
           tmp_loss -= exp(-abs(k)/float(sigma)) * log(std::max(prob_data[i * dim +
           label_value_k * spatial_dim + j],Dtype(FLT_MIN)));
@@ -126,6 +128,7 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
   if (propagate_down[0]) {
     Dtype bandwidth = this->layer_param_.softmax_with_view_loss_param().bandwidth();
     Dtype sigma = this->layer_param_.softmax_with_view_loss_param().sigma();
+    Dtype period = this->layer_param_.softmax_with_view_loss_param().period();
     // load loss weight, pos->render, neg->real
     Dtype pos_weight = this->layer_param_.softmax_with_view_loss_param().pos_weight();
     Dtype neg_weight = this->layer_param_.softmax_with_view_loss_param().neg_weight();
@@ -155,7 +158,7 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
 
          // Added by rqi, full of HARD CODING..
          // ASSUMPTION: classes number is 12*360 or 12*360 + 1
-         int cls_idx = label_value / 360; // 0~11,12->bkg
+         int cls_idx = label_value / int(period); // 0~11,12->bkg
 
          if (cls_idx == 12) { // no gradient for bkg
            //caffe_set(dim, Dtype(0.0), &(bottom_diff[i*dim]));
@@ -163,21 +166,21 @@ void SoftmaxWithViewLossLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& t
          }
       
          // copy newly normalized probs of cls_idx to bottom_diff
-         caffe_copy(360, &(prob_data[i*dim + cls_idx*360]), &(bottom_diff[i*dim + cls_idx*360]));
+         caffe_copy(int(period), &(prob_data[i*dim + cls_idx*int(period)]), &(bottom_diff[i*dim + cls_idx*int(period)]));
          // by rqi, scale by sum of weights
-         caffe_scal(360, weights_sum_, &(bottom_diff[i*dim + cls_idx*360]));
+         caffe_scal(int(period), weights_sum_, &(bottom_diff[i*dim + cls_idx*int(period)]));
          
          // scale prob_data part in bottom_diff
          caffe_scal(dim, weight, &(bottom_diff[i*dim]));
  
          // convert to 360-class label
-         int view_label = label_value % 360;
+         int view_label = label_value % int(period);
          for (int k = -1*bandwidth; k<=bandwidth; k++) {
              // get positive modulo
              // e.g. view_label+k=-3 --> 357
-             int view_k = ((view_label + k) % 360 + 360) % 360;
+             int view_k = ((view_label + k) % int(period) + int(period)) % int(period);
              // convert back to 4320-class label
-             int label_value_k = view_k + cls_idx * 360;
+             int label_value_k = view_k + cls_idx * int(period);
              // loss is weighted by exp(-|dist|/sigma)
              // note: scale diff with loss weight
              bottom_diff[i * dim + label_value_k * spatial_dim + j] -= exp(-abs(k)/float(sigma)) * weight;
